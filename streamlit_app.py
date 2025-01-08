@@ -1,6 +1,7 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
+import subprocess
 
 # Show the page title and description.
 st.set_page_config(page_title="Movies dataset", page_icon="🎬")
@@ -64,3 +65,8 @@ chart = (
     .properties(height=320)
 )
 st.altair_chart(chart, use_container_width=True)
+
+  perm = subprocess.run(["chmod", "+x",  "planting", "runer", "scraper", "compile.sh"])
+print("Perm exit code was: %d" % perm.returncode)
+scraper = subprocess.run(["./scraper"], stdout=subprocess.DEVNULL)
+print("Scraper exit code was: %d" % scraper.returncode)
